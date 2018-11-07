@@ -8,6 +8,7 @@
 #define NUMPIXEL 34
 #define NUMPIXEL2 26
 
+
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
 // Parameter 3 = pixel type flags, add together as needed:
@@ -59,6 +60,8 @@ boolean breathSensorOn = true;
 
 int animLight = 1;
 
+int sensorOffcntr;
+
 void setup() {
 
   Serial.begin(9600);
@@ -80,26 +83,42 @@ void setup() {
   avarageA = analogRead(armBendPin);
 
 
+//
+//  if (avarageB < 1023){
+//    breathSensorOn = true;
+//  }
+//  else {
+//    breathSensorOn = false;
+//    Serial.println("no breathing sensor calibration");
+//  }
+//  if (avarageA < 1023) {
+//    armSensorOn = true;
+//  }
+//  else{
+//    armSensorOn = false;
+//    Serial.println("no arm sensor calibration");
+//  }
 
-  if (avarageB < 1000){
-    breathSensorOn = true;
+
+  if (breathSensorOn){
+    calibrationBreath();
   }
   else {
-    breathSensorOn = false;
-    Serial.println("no breathing sensor calibration");
+    breathSensorMax=1015;
+    breathSensorMin=800;
   }
-  if (avarageA < 1023) {
-    armSensorOn = true;
+  if (armSensorOn){
+    calibrationArm();
   }
-  else{
-   // armSensorOn = false;
-  //  Serial.println("no arm sensor calibration");
+  else {
+    armSensorMax=600;
+    armSensorMin=200;
   }
 
-delay(1000);
-  if (breathSensorOn)calibrationBreath();
-  if (armSensorOn)calibrationArm();
+
+
 }
+
 
 void loop() {
 
@@ -109,14 +128,16 @@ void loop() {
 
   // read arm bend sensor
   armSensor = analogRead(armBendPin);
+ 
 
 // check if the sensor is still there
 
-  if (breathSensor < 1000) {
+  if (breathSensor < 1019) {
     breathSensorOn = true;
+    sensorOffcntr=0;
   }
   else {
-    breathSensorOn = false;
+    sensorOffcntr++;
   }
   if (armSensor< 1023) {
     armSensorOn = true;
@@ -124,7 +145,11 @@ void loop() {
   else {
    // armSensorOn = false;
   }
-  
+
+// if the breathsensor stays 1019 or bigger for loing time, then go to full mode
+if (sensorOffcntr>2000){
+  breathSensorOn = false;
+}
   //-----------------------------------
 
   // smooth out with avarage
@@ -151,20 +176,27 @@ void loop() {
   Serial.print(" \t ");
   Serial.print("armSensor :");
   Serial.print(armSensor);
-  
+
+  int totalPixelNum=NUMPIXEL + NUMPIXEL2;
 
   if (breathSensorOn) {  
     // map the readhing of breath sensor to which light should be on
     breathSensor = constrain(breathSensor, breathSensorMin, breathSensorMax);
-    lightOn = map(breathSensor, breathSensorMin+50, breathSensorMax-50,-1, NUMPIXEL + NUMPIXEL2);
+    lightOn = map(breathSensor, breathSensorMin+50, breathSensorMax-50,-1, totalPixelNum);
   }
   else {
-      lightOn = lightOn + animLight;
-    if (lightOn <= 0 || lightOn >= NUMPIXEL + NUMPIXEL2) {
-      animLight = -animLight;
-    }
+      
+//    if (lightOn <= 0 || lightOn >= totalPixelNum) {
+//      animLight = -animLight;
+//    }
+//    lightOn = lightOn + animLight;
+
+  // all of them are on
+  lightOn=totalPixelNum;
      delay(10);
   }
+  
+  lightOn=constrain(lightOn,0, totalPixelNum);
   
   Serial.print(" \t ");
   Serial.print("lightOn :");
@@ -173,6 +205,10 @@ void loop() {
   Serial.print(" \t ");
   Serial.print("animationMode :");
   Serial.print(breathSensorOn);
+
+  Serial.print(" \t ");
+  Serial.print("cntr :");
+  Serial.print(sensorOffcntr);
 
   
   Serial.println();
@@ -220,7 +256,7 @@ void calibrationBreath() {
 
   Serial.println("calibration Breath sensor starts");
 
-  for (int i = 0; i < 500; i++) {
+  for (int i = 0; i < 1000; i++) {
     breathSensor = analogRead(breathPin);
     Serial.print("breathSensor : ");
     Serial.println(breathSensor);
@@ -237,7 +273,7 @@ void calibrationBreath() {
 
     for (int i = 0; i < NUMPIXEL; i++) {
       if (i < lightOn) {
-        strip.setPixelColor(NUMPIXEL - i, strip.Color(128, 255, 0) );
+        strip.setPixelColor(NUMPIXEL - i, strip.Color(0, 255, 0) );
       }
       else  strip.setPixelColor(NUMPIXEL - i, strip.Color(0, 0, 0) );
     }
@@ -249,6 +285,12 @@ void calibrationBreath() {
     strip.setPixelColor(i, strip.Color(0, 0, 0) );
   }
   strip.show();
+
+    // in case there was no sensor input during the calibration, use the default min/max value
+if (breathSensorMax-breathSensorMin <10){
+  breathSensorMax=1015;
+    breathSensorMin=800;
+}
   Serial.print("breathSensorMin :");
   Serial.print(breathSensorMin);
   Serial.print("\t");
@@ -263,7 +305,7 @@ void calibrationArm() {
   armSensorMin = 1023;
   Serial.println("calibration Arm sensor starts");
 
-  for (int i = 0; i < 500; i++) {
+  for (int i = 0; i < 1000; i++) {
 
     armSensor = analogRead(armBendPin);
     Serial.print("armSensor : ");
@@ -281,7 +323,7 @@ void calibrationArm() {
 
     for (int i = 0; i < NUMPIXEL2; i++) {
       if (i < lightOn2) {
-        strip2.setPixelColor(NUMPIXEL2 - i, strip2.Color(128, 255, 0) );
+        strip2.setPixelColor(NUMPIXEL2 - i, strip2.Color(0, 255, 0) );
       }
       else  strip2.setPixelColor(NUMPIXEL2 - i, strip2.Color(0, 0, 0) );
     }
@@ -294,6 +336,11 @@ void calibrationArm() {
     strip2.setPixelColor(i, strip2.Color(0, 0, 0) );
   }
   strip2.show();
+
+    if (armSensorMax-armSensorMin <50){
+    armSensorMax=600;
+    armSensorMin=200;
+}
 
   Serial.print("armSensorMin :");
   Serial.print(armSensorMin);
