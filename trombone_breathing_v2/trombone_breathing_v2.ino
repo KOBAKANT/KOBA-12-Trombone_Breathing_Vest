@@ -5,7 +5,7 @@
 
 #define PIN 5
 #define PIN2 6
-#define NUMPIXEL 34
+#define NUMPIXEL 32
 #define NUMPIXEL2 26
 
 
@@ -78,19 +78,19 @@ void setup() {
   //pinMode(armBendPin,INPUT_PULLUP);
 
 
-  //delay(500);
+  delay(1000);
   avarageB = analogRead(breathPin);
   avarageA = analogRead(armBendPin);
 
 
-  //
-  //  if (avarageB < 1023){
-  //    breathSensorOn = true;
-  //  }
-  //  else {
-  //    breathSensorOn = false;
-  //    Serial.println("no breathing sensor calibration");
-  //  }
+  
+    if (avarageB < 1023){
+      breathSensorOn = true;
+    }
+    else {
+      breathSensorOn = false;
+      Serial.println("no breathing sensor calibration");
+    }
   //  if (avarageA < 1023) {
   //    armSensorOn = true;
   //  }
@@ -130,27 +130,6 @@ void loop() {
   armSensor = analogRead(armBendPin);
 
 
-  // check if the sensor is still there
-
-  if (breathSensor < 1019) {
-    breathSensorOn = true;
-    sensorOffcntr = 0;
-  }
-  else {
-    sensorOffcntr++;
-  }
-  if (armSensor < 1023) {
-    armSensorOn = true;
-  }
-  else {
-    // armSensorOn = false;
-  }
-
-  // if the breathsensor stays 1019 or bigger for loing time, then go to full mode
-  if (sensorOffcntr > 2000) {
-    breathSensorOn = false;
-  }
-  //-----------------------------------
 
   // smooth out with avarage
   breathSensor = ( avarageB * (sampleSize - 1) + breathSensor) / sampleSize;
@@ -164,7 +143,17 @@ void loop() {
   // read calib button and call the callibration if necessary
   buttonState = digitalRead(calibButtonPin);
   if (buttonState != lastButtonState && buttonState == LOW) {
-    if (breathSensorOn)calibrationBreath();
+if (avarageB < 1023)breathSensorOn=true;
+else breathSensorOn=false;
+    
+      if (breathSensorOn) {
+    calibrationBreath();
+  }
+  else {
+    breathSensorMax = 1015;
+    breathSensorMin = 800;
+  }
+
     if (armSensorOn)calibrationArm();
   }
   lastButtonState = buttonState;
@@ -185,51 +174,30 @@ void loop() {
     lightOn = map(breathSensor, breathSensorMin + 50, breathSensorMax - 50, -1, totalPixelNum);
   }
   else {
-
-    //    if (lightOn <= 0 || lightOn >= totalPixelNum) {
-    //      animLight = -animLight;
-    //    }
-    //    lightOn = lightOn + animLight;
-
-    // all of them are on
     lightOn = totalPixelNum;
     delay(10);
   }
 
   lightOn = constrain(lightOn, 0, totalPixelNum);
 
-  Serial.print(" \t ");
-  Serial.print("lightOn :");
-  Serial.print(lightOn);
 
-  Serial.print(" \t ");
-  Serial.print("animationMode :");
-  Serial.print(breathSensorOn);
-
-  Serial.print(" \t ");
-  Serial.print("cntr :");
-  Serial.print(sensorOffcntr);
-
-
-  Serial.println();
 
   if (armSensorOn) {
     // decide the color of pixel with arm sensor
     armSensor = constrain(armSensor, armSensorMin, armSensorMax);
-    R = map(armSensor, armSensorMin, armSensorMax, 255, 114);
-    G = map(armSensor, armSensorMin, armSensorMax, 114, 255);
+    G = map(armSensor, armSensorMin, armSensorMax, 54, 255);
+    R = map(armSensor, armSensorMin, armSensorMax, 255, 54);
     B = map(armSensor, armSensorMin, armSensorMax, 0, 0);
 
   }
-  else {
-    R = 255;
-    G = 114;
-    B = 0;
-  }
+//  else {
+//    R = 255;
+//    G = 114;
+//    B = 0;
+//  }
 
-  for (int i = 0; i < NUMPIXEL; i++) {
+  for (int i = 1; i < NUMPIXEL+1; i++) {
    
-
     if (i < lightOn) {
       strip.setPixelColor(NUMPIXEL - i, strip.Color(R, G, B) );
     }
@@ -243,11 +211,29 @@ void loop() {
     else  strip2.setPixelColor(i, strip2.Color(0, 0, 0) );
   }
 
-
-
   strip.show();
   strip2.show();
 
+  Serial.print(" \t ");
+  Serial.print("lightOn :");
+  Serial.print(lightOn);
+
+  Serial.print(" \t ");
+  Serial.print("animationMode :");
+  Serial.print(breathSensorOn);
+
+  Serial.print(" \t ");
+  Serial.print("R :");
+  Serial.print(R);
+  Serial.print(" \t ");
+  Serial.print("G :");
+  Serial.print(G);
+  Serial.print(" \t ");
+  Serial.print("B :");
+  Serial.print(B);
+
+
+  Serial.println();
 
   delay(10);
 }
@@ -258,6 +244,12 @@ void calibrationBreath() {
   breathSensorMin = 1023;
 
   Serial.println("calibration Breath sensor starts");
+
+// turn the pixel on the arm off
+  for (int i = 1; i < NUMPIXEL2+1; i++) {
+       strip2.setPixelColor(NUMPIXEL2 - i, strip2.Color(0, 0, 0) );
+  }
+    strip2.show();
 
   for (int i = 0; i < 1000; i++) {
     breathSensor = analogRead(breathPin);
@@ -274,10 +266,10 @@ void calibrationBreath() {
     lightOn = map(breathSensor, breathSensorMin, breathSensorMax, -1, NUMPIXEL);
 
 
-    for (int i = 0; i < NUMPIXEL; i++) {
+    for (int i = 1; i < NUMPIXEL+1; i++) {
     
       if (i < lightOn) {
-        strip.setPixelColor(NUMPIXEL - i, strip.Color(0, 255, 0) );
+        strip.setPixelColor(NUMPIXEL - i, strip.Color(54, 255, 0) );
       }
       else  strip.setPixelColor(NUMPIXEL - i, strip.Color(0, 0, 0) );
     }
@@ -309,6 +301,14 @@ void calibrationArm() {
   armSensorMin = 1023;
   Serial.println("calibration Arm sensor starts");
 
+  // turn the pixels on the torso off
+   for (int i = 1; i < NUMPIXEL+1; i++) {    
+       strip.setPixelColor(NUMPIXEL - i, strip.Color(0, 0, 0) );
+    }
+    strip.show();
+    
+  
+
   for (int i = 0; i < 1000; i++) {
 
     armSensor = analogRead(armBendPin);
@@ -325,9 +325,9 @@ void calibrationArm() {
     lightOn2 = map(armSensor, armSensorMin, armSensorMax, NUMPIXEL2, -1);
 
 
-    for (int i = 0; i < NUMPIXEL2; i++) {
+    for (int i = 1; i < NUMPIXEL2+1; i++) {
       if (i < lightOn2) {
-        strip2.setPixelColor(NUMPIXEL2 - i, strip2.Color(0, 255, 0) );
+        strip2.setPixelColor(NUMPIXEL2 - i, strip2.Color(54, 255, 0) );
       }
       else  strip2.setPixelColor(NUMPIXEL2 - i, strip2.Color(0, 0, 0) );
     }
@@ -342,9 +342,13 @@ void calibrationArm() {
   strip2.show();
 
   if (armSensorMax - armSensorMin < 50) {
-    armSensorMax = 600;
+    armSensorMax = 700;
     armSensorMin = 200;
   }
+
+  armSensorMax=armSensorMax-100;
+  armSensorMax=constrain(armSensorMax,0,1023);
+
 
   Serial.print("armSensorMin :");
   Serial.print(armSensorMin);

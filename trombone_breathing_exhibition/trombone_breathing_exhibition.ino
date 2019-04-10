@@ -5,7 +5,7 @@
 
 #define PIN 5
 #define PIN2 6
-#define NUMPIXEL 34
+#define NUMPIXEL 32
 #define NUMPIXEL2 26
 
 
@@ -77,18 +77,20 @@ void setup() {
   Serial.begin(9600);
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
-  strip.setBrightness(128);
+  strip.setBrightness(255);
 
   strip2.begin();
   strip2.show(); // Initialize all pixels to 'off'
-  strip2.setBrightness(128);
+  strip2.setBrightness(255);
 
   pinMode(calibButtonPin, INPUT_PULLUP);
   //pinMode(breathPin,INPUT_PULLUP);
   //pinMode(armBendPin,INPUT_PULLUP);
+ 
 
   
  delay(500);
+
   //avarageB = analogRead(breathPin);
  // avarageA = analogRead(armBendPin);
 
@@ -204,7 +206,8 @@ breathSensor=fakeBreath();
   if (breathSensorOn) {  
     // map the readhing of breath sensor to which light should be on
     breathSensor = constrain(breathSensor, breathSensorMin, breathSensorMax);
-    lightOn = map(breathSensor, breathSensorMin+50, breathSensorMax-50,-1, totalPixelNum);
+    lightOn = map(breathSensor, breathSensorMin, breathSensorMax,-1, totalPixelNum);
+    Serial.println(lightOn);
   }
   else {
       
@@ -254,7 +257,7 @@ if (armSensor <=0){
 }
 }
 
-Serial.println(fakeArmOn);
+
   if (armSensorOn) {
     // decide the color of pixel with arm sensor
     armSensor = constrain(armSensor, armSensorMin, armSensorMax);
@@ -268,11 +271,13 @@ Serial.println(fakeArmOn);
     B = 0;
   }
 
-  for (int i = 0; i < NUMPIXEL; i++) {
+  for (int i = 1; i < NUMPIXEL+1; i++) {
+    
+    
     if (i < lightOn) {
-      strip.setPixelColor(NUMPIXEL - i, strip.Color(R, G, B) );
+      strip.setPixelColor(NUMPIXEL- i, strip.Color(R, G, B) );
     }
-    else  strip.setPixelColor(NUMPIXEL - i, strip.Color(0, 0, 0) );
+    else  strip.setPixelColor(NUMPIXEL- i, strip.Color(0, 0, 0) );
   }
 
   for (int i = 0; i < NUMPIXEL2; i++) {
@@ -397,7 +402,8 @@ int fakeBreath(){
 
   if (fakeCounter<=0){
     fakeMax = random(12,48);
-    fakeMax = fakeMax*12;
+    //fakeMax = fakeMax*12;
+    fakeMax =breathSensorMax;
     fakeMax = constrain (fakeMax, 0,breathSensorMax);
     inc = random (2,5);
   }
