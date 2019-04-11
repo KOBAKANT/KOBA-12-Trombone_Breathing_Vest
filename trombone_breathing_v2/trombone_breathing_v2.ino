@@ -65,13 +65,15 @@ int sensorOffcntr;
 void setup() {
 
   Serial.begin(9600);
+
+
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
-  strip.setBrightness(255);
+  strip.setBrightness(255); // keep the brightness to 255, or it is causing the flickering
 
   strip2.begin();
   strip2.show(); // Initialize all pixels to 'off'
-  strip2.setBrightness(255);
+  strip2.setBrightness(255); // keep the brightness to 255, or it is causing the flickering
 
   pinMode(calibButtonPin, INPUT_PULLUP);
   //pinMode(breathPin,INPUT_PULLUP);
